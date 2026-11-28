@@ -125,9 +125,15 @@ class ItunesInputTest(unittest.TestCase):
                 report = _Report()
                 made = []
                 real_mkdtemp = tempfile.mkdtemp
+
+                def track_mkdtemp(record=made.append, create=real_mkdtemp, **kwargs):
+                    path = create(**kwargs)
+                    record(path)
+                    return path
+
                 with patch.object(self.vsd, '_execute_tool') as inner, \
                         patch.object(self.vsd.tempfile, 'mkdtemp',
-                                     side_effect=lambda **kw: made.append(real_mkdtemp(**kw)) or made[-1]):
+                                     side_effect=track_mkdtemp):
                     result = self.vsd.execute_tool(source, 'label', 'log', report, declared_type='itunes')
                 inner.assert_not_called()
                 self.assertEqual(result, (None, None, None))
